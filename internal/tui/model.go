@@ -672,7 +672,7 @@ func (model *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 }
 
 func conditionalDisplay(err *error) string {
-	if err != nil {
+	if *err != nil {
 		return lipgloss.NewStyle().
 			Foreground(lipgloss.Color("100")).
 			Render((*err).Error())
