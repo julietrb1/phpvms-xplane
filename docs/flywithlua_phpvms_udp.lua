@@ -1,11 +1,10 @@
 -- FlyWithLua UDP bridge for phpVMS Python client
 -- Drop this file into X-Plane 12 Resources/plugins/FlyWithLua/Scripts/
--- Requires LuaSocket (bundled with FlyWithLua NG) and a JSON library (dkjson or cjson).
 
 -- =====================
 -- User configuration
 -- =====================
-local HOST = "10.0.0.132"
+local HOST = "127.0.0.1"   -- change this to the host running PXP
 local PORT = 47777         -- must match the Python client's UDP bridge port
 local SEND_INTERVAL = 0.5  -- minimum seconds between sends (coarse throttle)
 
