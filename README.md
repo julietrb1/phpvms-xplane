@@ -6,6 +6,13 @@ for short) offers an alternative for those who can't (or don't wish to)
 run it, such as Windows users. It connects to X-Plane 12 via a provided
 FlyWithLua script.
 
+It's designed to be:
+- fast
+- small
+- simple
+- portable
+- observable.
+
 This is a work of love and not of profit; it doesn't come with promises,
 but I will update it as long as I use it!
 
@@ -79,47 +86,6 @@ For development, you can use the `dev` target in the Makefile:
 make dev
 ```
 
-## UDP Message Format
-
-The application expects UDP messages in the following JSON format:
-
-```json
-{
-  "status": "ENR",
-  "position": {
-    "lat": 40.6398,
-    "lon": -73.7789,
-    "altitude_msl": 12000.0,
-    "altitude_agl": 500.0,
-    "gs": 320.0,
-    "sim_time": 1724167500,
-    "distance": 217.4,
-    "heading": 255.0,
-    "ias": 250.0,
-    "vs": -500.0
-  },
-  "fuel": 4520.0,
-  "flight_time": 83.0,
-  "events": [{"log":"Passing 10,000 ft","sim_time":1724167400}]
-}
-```
-
-Field descriptions:
-- `status`: PirepStatus code (e.g., INI, BST, TXI, TOF, ENR, ARR, PSD)
-- `position.lat`: Latitude in degrees
-- `position.lon`: Longitude in degrees
-- `position.altitude_msl`: Altitude above mean sea level in feet
-- `position.altitude_agl`: Altitude above ground level in feet
-- `position.gs`: Ground speed in knots
-- `position.sim_time`: Simulation time in Unix epoch seconds
-- `position.distance`: Distance in nautical miles
-- `position.heading`: Heading in degrees
-- `position.ias`: Indicated airspeed in knots
-- `position.vs`: Vertical speed in feet per minute
-- `fuel`: Remaining fuel in kilograms
-- `flight_time`: Flight time in minutes since block off
-- `events`: Optional array of events with log messages and timestamps
-
 ## Usage
 
 1. Start the application with the required configuration.
@@ -142,4 +108,4 @@ make clean
 
 ## License
 
-This project is licensed under the MIT License - see the LICENSE file for details.
+This project is licensed under the GNU General Public License v3.0 - see the [LICENSE](./LICENSE) for details.
