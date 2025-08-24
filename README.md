@@ -1,52 +1,44 @@
-# phpVMS ACARS Client
+# phpvms-xplane (PXP)
 
-A Go application that replaces the existing Python PySide client for phpVMS. This application consumes UDP JSON payloads sent by the FlyWithLua script in X-Plane 12 and performs the complete PIREP workflow against a phpVMS backend.
+While [phpVMS](https://www.phpvms.net) integrates directly with
+[vmsACARS](https://docs.phpvms.net/acars/overview), phpvms-xplane (PXP
+for short) offers an alternative for those who can't (or don't wish to)
+run it, such as Windows users. It connects to X-Plane 12 via a provided
+FlyWithLua script.
+
+This is a work of love and not of profit; it doesn't come with promises,
+but I will update it as long as I use it!
 
 ## Features
 
 - Listens for UDP JSON payloads from X-Plane 12
 - Implements the complete phpVMS API client
 - Manages the PIREP workflow (prefile, updates, file, cancel)
-- Optional status interface via HTTP (disabled by default)
 - Interactive Terminal User Interface (TUI) for monitoring and control
 - Configurable via environment variables
 
 ## Requirements
 
-- Go 1.24 or later
 - X-Plane 12 with FlyWithLua script sending UDP JSON payloads
 - phpVMS backend
 
-## Installation
+## Usage
 
-1. Clone the repository:
-   ```
-   git clone https://github.com/yourusername/phpvms-xplane.git
-   cd phpvms-xplane
-   ```
-
-2. Build the application:
-   ```
-   make build
-   ```
-
-3. Run the application:
-   ```
-   make run
-   ```
+(something good planned for this section!)
 
 ## Configuration
 
 The application can be configured using environment variables:
 
-| Environment Variable | Description | Default |
-|----------------------|-------------|---------|
-| PHPVMS_BASE_URL | Base URL of the phpVMS API (required) | |
-| PHPVMS_API_KEY | API key for phpVMS authentication (required) | |
-| UDP_BIND_HOST | Host to bind the UDP listener to | 0.0.0.0 |
-| UDP_BIND_PORT | Port to bind the UDP listener to | 47777 |
-| TUI_ENABLED | Enable Terminal User Interface | true |
-| LOG_LEVEL | Log level (debug, info, warn, error) | info |
+| Environment Variable | Description                                  | Default |
+|----------------------|----------------------------------------------|---------|
+| PHPVMS_BASE_URL      | Base URL of the phpVMS API (required)        |         |
+| PHPVMS_API_KEY       | API key for phpVMS authentication (required) |         |
+| UDP_BIND_HOST        | Host to bind the UDP listener to             | 0.0.0.0 |
+| UDP_BIND_PORT        | Port to bind the UDP listener to             | 47777   |
+| TUI_ENABLED          | Enable Terminal User Interface               | true    |
+| LOG_LEVEL            | Log level (debug, info, warn, error)         | info    |
+| SIMBRIEF_USER_ID     | The pilot's numeric SimBrief ID              |         |
 
 ### Using Environment Variables
 
@@ -58,6 +50,7 @@ UDP_BIND_HOST=0.0.0.0 \
 UDP_BIND_PORT=47777 \
 TUI_ENABLED=true \
 LOG_LEVEL=info \
+SIMBRIEF_USER_ID=123456 \
 ./build/phpvmsd
 ```
 
@@ -72,6 +65,7 @@ UDP_BIND_HOST=0.0.0.0
 UDP_BIND_PORT=47777
 TUI_ENABLED=true
 LOG_LEVEL=info
+SIMBRIEF_USER_ID=123456
 ```
 
 The application will automatically load the `.env` file if it exists. You can also specify a custom path to the `.env` file using the `-config` flag:
@@ -133,29 +127,6 @@ Field descriptions:
 3. Start a flight in X-Plane 12.
 4. The application will receive the UDP payloads and update the PIREP in phpVMS.
 5. Interact with the application through the Terminal User Interface (if TUI_ENABLED is true).
-
-### Terminal User Interface (TUI)
-
-The application includes an interactive Terminal User Interface (TUI) that allows you to:
-
-- Monitor UDP metrics in real-time (packets received, last sender, last status, etc.)
-- Start a new flight by entering flight details (airline ID, flight number, aircraft ID, departure, arrival)
-- File a completed flight
-- Cancel an active flight
-- Reset the active PIREP
-
-#### TUI Keyboard Shortcuts
-
-- `?`: Toggle help view
-- `q` or `Ctrl+C`: Quit the application
-- `s`: Start a new flight (when in flight input mode)
-- `f`: File the active flight
-- `c`: Cancel the active flight
-- `r`: Reset the active PIREP
-- `Tab`: Navigate to the next input field
-- `Shift+Tab`: Navigate to the previous input field
-
-You can disable the TUI by setting `TUI_ENABLED=false` in your environment or .env file, or by using the `-tui=false` command-line flag.
 
 ## Development
 
