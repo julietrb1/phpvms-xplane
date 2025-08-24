@@ -33,3 +33,5 @@ go.work.sum
 
 .idea/
 vendor/
+# Added by goreleaser init:
+dist/
