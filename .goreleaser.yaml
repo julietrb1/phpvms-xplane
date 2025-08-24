@@ -1,0 +1,17 @@
+builds:
+  - main: ./phpvmsd
+    binary: pxp
+    goos:
+      - linux
+      - windows
+      - darwin
+    goarch:
+      - amd64
+      - arm64
+
+archives:
+  - format: tar.gz
+release:
+  github:
+    owner: julietrb1
+    repo: phpvms-xplane
