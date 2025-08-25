@@ -13,8 +13,7 @@ func conditionalDisplay(err *error) string {
 			Foreground(colourAttention).
 			Render((*err).Error())
 	}
-	return styleSecondary.
-		Render("OK")
+	return "OK"
 }
 
 func conditionalAttentionString(input *string) string {
