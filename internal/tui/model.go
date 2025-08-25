@@ -2,10 +2,9 @@ package tui
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
-	"github.com/julietrb1/phpvms-xplane/internal/api"
 	"log/slog"
-	"math"
 	"strconv"
 	"strings"
 	"time"
@@ -45,7 +44,7 @@ var (
 	colourAttention  = lipgloss.Color("204")
 	colourText       = lipgloss.Color("229")
 	colourBackground = lipgloss.Color("57")
-	headingStyle     = lipgloss.NewStyle().
+	styleHeading     = lipgloss.NewStyle().
 				Bold(true).
 				Underline(true).
 				MarginTop(1)
@@ -302,113 +301,64 @@ func (model *Model) Init() tea.Cmd {
 	)
 }
 
-func (model *Model) fetchAirlineList() tea.Cmd {
-	return func() tea.Msg {
-		airlines, err := model.flightService.GetAirlines(model.ctx)
-		if err != nil {
-			model.logger.Error("Failed to fetch airline list", "error", err)
-			model.statusMessage = fmt.Sprintf("Failed to fetch airline list: %v", err)
-			return nil
+func (model *Model) handleKeyAircraftList(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
+	switch {
+	case key.Matches(msg, model.keys.Quit):
+		model.cancel()
+		return model, tea.Quit
+	case key.Matches(msg, model.keys.Back):
+		model.showAircraftList = false
+		return model, nil
+	case key.Matches(msg, model.keys.Enter):
+		id := GetSelectedAircraftID(model.aircraftList)
+		if id > 0 {
+			model.selectedAircraftID = id
+			model.showAircraftList = false
+			model.statusMessage = fmt.Sprintf("Selected aircraft ID: %d", id)
+
+			if model.config != nil {
+				model.config.SelectedAircraftID = id
+				if err := model.config.SavePreferences(""); err != nil {
+					model.logger.Error("Failed to save preferences", "error", err)
+				}
+			}
 		}
-
-		if len(airlines) == 0 {
-			model.statusMessage = "No airlines found in the API response"
-			return nil
-		}
-
-		items := ConvertToAirlineItems(airlines)
-
-		if len(items) == 0 {
-			model.statusMessage = "Failed to convert airlines data to list items"
-			return nil
-		}
-
-		return airlineListUpdatedMsg{items: items}
+		return model, nil
+	default:
+		var cmd tea.Cmd
+		model.aircraftList, cmd = model.aircraftList.Update(msg)
+		return model, cmd
 	}
 }
 
-func (model *Model) fetchInProgressPIREP() tea.Cmd {
-	return func() tea.Msg {
-		pireps, err := model.flightService.ListPIREPs(model.ctx)
-		if err != nil {
-			return fetchInProgressPIREPMsg{
-				error: err,
+func (model *Model) handleKeyAirlineList(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
+	switch {
+	case key.Matches(msg, model.keys.Quit):
+		model.cancel()
+		return model, tea.Quit
+	case key.Matches(msg, model.keys.Back):
+		model.showAirlineList = false
+		return model, nil
+	case key.Matches(msg, model.keys.Enter):
+		id := GetSelectedAirlineID(model.airlineList)
+		if id > 0 {
+			model.selectedAirlineID = id
+			model.showAirlineList = false
+			model.statusMessage = fmt.Sprintf("Selected airline ID: %d", id)
+
+			if model.config != nil {
+				model.config.SelectedAirlineID = id
+				if err := model.config.SavePreferences(""); err != nil {
+					model.logger.Error("Failed to save preferences", "error", err)
+				}
 			}
 		}
-		return fetchInProgressPIREPMsg{
-			pirep: pireps[0],
-		}
+		return model, nil
+	default:
+		var cmd tea.Cmd
+		model.airlineList, cmd = model.airlineList.Update(msg)
+		return model, cmd
 	}
-}
-
-func (model *Model) fetchSimbriefData() tea.Cmd {
-	return func() tea.Msg {
-		apiClient := model.flightService.GetAPIClient()
-		ofpData, err := apiClient.GetSimbriefOFP(model.ctx, model.config.SimbriefUserID)
-		if err != nil {
-			return fetchSimbriefOFPErrorMsg{
-				fmt.Errorf("failed to fetch SimBrief OFP: %w", err),
-			}
-		}
-
-		routeDistance, err := strconv.Atoi(ofpData.General.RouteDistance)
-		if err != nil {
-			return fetchSimbriefOFPErrorMsg{
-				fmt.Errorf("failed to parse route distance: %w", err),
-			}
-		}
-
-		initialAltitude, err := strconv.Atoi(ofpData.General.InitialAltitude)
-		if err != nil {
-			return fetchSimbriefOFPErrorMsg{
-				fmt.Errorf("failed to parse initial altitude: %w", err),
-			}
-		}
-
-		blockFuel, err := strconv.Atoi(ofpData.Fuel.PlanRamp)
-		if err != nil {
-			return fetchSimbriefOFPErrorMsg{
-				fmt.Errorf("failed to parse block fuel: %w", err),
-			}
-		}
-
-		flightTime, err := strconv.Atoi(ofpData.Times.EstTimeEnroute)
-		if err != nil {
-			return fetchSimbriefOFPErrorMsg{
-				fmt.Errorf("failed to parse flight time: %w", err),
-			}
-		}
-
-		return fetchSimbriefOFPMsg{
-			origin:          string(ofpData.Origin.ICAOCode),
-			destination:     string(ofpData.Destination.ICAOCode),
-			alternate:       string(ofpData.Alternate.ICAOCode),
-			flightNumber:    ofpData.General.FlightNumber,
-			planDist:        routeDistance,
-			initialAltitude: initialAltitude,
-			blockFuel:       blockFuel,
-			flightTime:      flightTime,
-			route:           ofpData.General.Route,
-		}
-	}
-}
-
-func (model *Model) fetchAircraftList() tea.Cmd {
-	return func() tea.Msg {
-		fleet, err := model.flightService.GetUserAircraftList(model.ctx)
-		if err != nil {
-			model.logger.Error("Failed to fetch aircraft list", "error", err)
-			return nil
-		}
-		items := ConvertToAircraftItems(fleet)
-		return aircraftListUpdatedMsg{items: items}
-	}
-}
-
-func tickCmd() tea.Cmd {
-	return tea.Tick(time.Second, func(t time.Time) tea.Msg {
-		return tickMsg(t)
-	})
 }
 
 func (model *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
@@ -417,63 +367,11 @@ func (model *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
 		if model.showAircraftList {
-			switch {
-			case key.Matches(msg, model.keys.Quit):
-				model.cancel()
-				return model, tea.Quit
-			case key.Matches(msg, model.keys.Back):
-				model.showAircraftList = false
-				return model, nil
-			case key.Matches(msg, model.keys.Enter):
-				id := GetSelectedAircraftID(model.aircraftList)
-				if id > 0 {
-					model.selectedAircraftID = id
-					model.showAircraftList = false
-					model.statusMessage = fmt.Sprintf("Selected aircraft ID: %d", id)
-
-					if model.config != nil {
-						model.config.SelectedAircraftID = id
-						if err := model.config.SavePreferences(""); err != nil {
-							model.logger.Error("Failed to save preferences", "error", err)
-						}
-					}
-				}
-				return model, nil
-			default:
-				var cmd tea.Cmd
-				model.aircraftList, cmd = model.aircraftList.Update(msg)
-				return model, cmd
-			}
+			return model.handleKeyAircraftList(msg)
 		}
 
 		if model.showAirlineList {
-			switch {
-			case key.Matches(msg, model.keys.Quit):
-				model.cancel()
-				return model, tea.Quit
-			case key.Matches(msg, model.keys.Back):
-				model.showAirlineList = false
-				return model, nil
-			case key.Matches(msg, model.keys.Enter):
-				id := GetSelectedAirlineID(model.airlineList)
-				if id > 0 {
-					model.selectedAirlineID = id
-					model.showAirlineList = false
-					model.statusMessage = fmt.Sprintf("Selected airline ID: %d", id)
-
-					if model.config != nil {
-						model.config.SelectedAirlineID = id
-						if err := model.config.SavePreferences(""); err != nil {
-							model.logger.Error("Failed to save preferences", "error", err)
-						}
-					}
-				}
-				return model, nil
-			default:
-				var cmd tea.Cmd
-				model.airlineList, cmd = model.airlineList.Update(msg)
-				return model, cmd
-			}
+			return model.handleKeyAirlineList(msg)
 		}
 
 		var focusedFlightInput *int
@@ -514,7 +412,7 @@ func (model *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				model.statusMessage = "Fetching SimBrief OFP..."
 				return model, model.fetchSimbriefData()
 			} else {
-				model.statusMessage = "Set SIMBRIEF_USER_ID in .env"
+				model.statusMessage = "Set SIMBRIEF_USER_ID"
 			}
 		case key.Matches(msg, model.keys.FetchActivePIREP):
 			model.statusMessage = "Fetching active PIREP..."
@@ -609,16 +507,7 @@ func (model *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	case fetchSimbriefOFPMsg:
 		if msg.origin != "" && msg.destination != "" {
-			model.flightInputs[1].SetValue(msg.origin)
-			model.flightInputs[2].SetValue(msg.destination)
-			model.flightInputs[3].SetValue(msg.alternate)
-			model.flightInputs[4].SetValue(msg.flightNumber)
-			model.flightInputs[5].SetValue(strconv.Itoa(msg.planDist))
-			model.flightInputs[6].SetValue(strconv.Itoa(msg.initialAltitude))
-			model.flightInputs[7].SetValue(strconv.Itoa(msg.blockFuel))
-			model.flightInputs[8].SetValue(strconv.Itoa(msg.flightTime))
-			model.flightInputs[9].SetValue(msg.route)
-
+			model.populateFieldsFromSimbriefOFP(msg)
 			model.statusMessage = fmt.Sprintf("SimBrief OFP loaded: %s to %s", msg.origin, msg.destination)
 		} else {
 			model.statusMessage = "Failed to extract origin, destination, alternate from SimBrief OFP"
@@ -644,16 +533,16 @@ func (model *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			}
 
 			// TODO: Fix this
-			//var fields map[string]string
-			//if err := json.Unmarshal(msg.pirep.Fields, &fields); err != nil {
-			//	model.statusMessage = fmt.Sprintf("Failed to parse PIREP fields: %v", err)
-			//	break
-			//}
-			//if networkCallsign, exists := fields["Network Callsign Used"]; exists {
-			//	model.flightInputs[4].SetValue(networkCallsign)
-			//} else {
-			//	model.flightInputs[4].SetValue("")
-			//}
+			var fields map[string]string
+			if err := json.Unmarshal(msg.pirep.Fields, &fields); err != nil {
+				model.statusMessage = fmt.Sprintf("Failed to parse PIREP fields: %v", err)
+				break
+			}
+			if networkCallsign, exists := fields["Network Callsign Used"]; exists {
+				model.flightInputs[4].SetValue(networkCallsign)
+			} else {
+				model.flightInputs[4].SetValue("")
+			}
 
 			model.flightInputs[5].SetValue(strconv.Itoa(int(msg.pirep.Distance.Nmi)))
 			model.flightInputs[6].SetValue(strconv.Itoa(*msg.pirep.Level))
@@ -701,14 +590,16 @@ func (model *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	return model, tea.Batch(cmds...)
 }
 
-func conditionalDisplay(err *error) string {
-	if *err != nil {
-		return lipgloss.NewStyle().
-			Foreground(colourAttention).
-			Render((*err).Error())
-	}
-	return styleSecondary.
-		Render("OK")
+func (model *Model) populateFieldsFromSimbriefOFP(msg fetchSimbriefOFPMsg) {
+	model.flightInputs[1].SetValue(msg.origin)
+	model.flightInputs[2].SetValue(msg.destination)
+	model.flightInputs[3].SetValue(msg.alternate)
+	model.flightInputs[4].SetValue(msg.flightNumber)
+	model.flightInputs[5].SetValue(strconv.Itoa(msg.planDist))
+	model.flightInputs[6].SetValue(strconv.Itoa(msg.initialAltitude))
+	model.flightInputs[7].SetValue(strconv.Itoa(msg.blockFuel))
+	model.flightInputs[8].SetValue(strconv.Itoa(msg.flightTime))
+	model.flightInputs[9].SetValue(msg.route)
 }
 
 func (model *Model) View() string {
@@ -740,272 +631,4 @@ func (model *Model) View() string {
 	}
 
 	return s
-}
-
-func (model *Model) renderFlightControls(s string) string {
-	s += headingStyle.
-		Render("Flight controls") + "\n"
-
-	if model.activeTab == 0 {
-		s += stylePairKey.Render("Airline")
-		if model.selectedAirlineID > 0 {
-			airlineInfo := model.findSelectedAirline()
-			s += airlineInfo + "\n"
-		} else {
-			s += styleSecondary.Render("Press 'l' to select airline") + "\n"
-		}
-
-		for i, input := range model.flightInputs {
-			var label string
-			switch i {
-			case 0:
-				label = "ACARS flight no."
-			case 1:
-				label = "Departure"
-			case 2:
-				label = "Arrival"
-			case 3:
-				label = "Alternate"
-			case 4:
-				label = "SimBrief flight no."
-			case 5:
-				{
-					label = "Plan dist. (nm)"
-				}
-			case 6:
-				{
-					label = "Altitude (ft)"
-				}
-			case 7:
-				{
-					label = "Block fuel (kg)"
-				}
-			case 8:
-				{
-					label = "Flight time (min)"
-				}
-			case 9:
-				{
-					label = "Route"
-				}
-			}
-			s += fmt.Sprintf("%s %s\n",
-				stylePairKey.Render(label),
-				input.View())
-		}
-
-		s += stylePairKey.Render("Aircraft")
-		if model.selectedAircraftID > 0 {
-			var aircraftInfo string
-			for _, item := range model.aircraftList.Items() {
-				if aircraftItem, ok := item.(AircraftItem); ok {
-					if aircraftItem.Aircraft.ID == model.selectedAircraftID {
-						aircraftInfo = fmt.Sprintf("%s (%s - %s)",
-							aircraftItem.Aircraft.Registration,
-							aircraftItem.Aircraft.ICAO,
-							aircraftItem.Aircraft.Name)
-						break
-					}
-				}
-			}
-			if aircraftInfo == "" {
-				aircraftInfo = fmt.Sprintf("ID: %d", model.selectedAircraftID)
-			}
-			s += aircraftInfo + "\n"
-		} else {
-			s += styleSecondary.Render("Press 'a' to select aircraft") + "\n"
-		}
-	}
-	return s
-}
-
-func (model *Model) renderTitle(s string) string {
-	s += styleTitle.
-		Render("PXP: the phpVMS ACARS Client") + "\n"
-
-	s += styleSubtitle.
-		Render(model.statusMessage)
-	return s
-}
-
-func (model *Model) renderACARSTransmissions(s string, snapshot udp.MetricsSnapshot) string {
-	s += headingStyle.
-		Render("ACARS transmissions") + "\n"
-
-	pirepID := model.flightService.GetActivePirepID()
-	s += stylePairKey.Render("Active PIREP ID:")
-	s += fmt.Sprintf("%s\n", conditionalAttentionString(pirepID))
-
-	s += stylePairKey.
-		Render("Last flight update:")
-	s += conditionalDisplay(snapshot.UpdateFlightErr) + "\n"
-
-	s += stylePairKey.
-		Render("Last position update:")
-	s += conditionalDisplay(snapshot.UpdatePositionErr) + "\n"
-
-	return s
-}
-
-func conditionalAttentionString(input *string) string {
-	if input == nil {
-		return styleAttention.Render("(none)")
-	}
-	return styleAttention.Render(*input)
-}
-
-func conditionalAttentionTime(input *time.Time) string {
-	if input == nil {
-		return styleAttention.Render("(none)")
-	}
-	return input.Format(time.RFC3339)
-}
-
-func (model *Model) renderFlightMetrics(s string, snapshot udp.MetricsSnapshot) string {
-	s += headingStyle.Render("Flight metrics") + "\n"
-
-	if snapshot.LastStatus != nil {
-		s += fmt.Sprintf("Last status: %s\n", *snapshot.LastStatus)
-	}
-	s += stylePairKey.Render("Fuel:")
-	s += fmt.Sprintf("%d kg\n", *snapshot.LastFuel)
-
-	s += stylePairKey.Render("Flight time:")
-	s += fmt.Sprintf("%d minutes\n", *snapshot.LastFlightTime)
-
-	s += stylePairKey.Render("Distance:")
-	s += fmt.Sprintf("%d nm\n", *snapshot.LastDistance)
-
-	return s
-}
-
-func (model *Model) renderUDPMetrics(s string, snapshot udp.MetricsSnapshot) string {
-	s += headingStyle.
-		Render("UDP metrics") + "\n"
-
-	s += stylePairKey.Render("Packets:")
-	if snapshot.PacketsAny == 0 {
-		s += styleAttention.Render("(none)") + "\n"
-	} else {
-		s += fmt.Sprintf("%d total, %d errors",
-			snapshot.PacketsAny, snapshot.PacketsErr) + "\n"
-	}
-
-	s += stylePairKey.Render("Last sender:")
-	s += conditionalAttentionString(snapshot.LastSender) + "\n"
-
-	s += stylePairKey.Render("Last packet:")
-	s += conditionalAttentionTime(snapshot.LastPacketTime) + "\n"
-	return s
-}
-
-func (model *Model) findSelectedAirline() string {
-	var airlineInfo string
-	for _, item := range model.airlineList.Items() {
-		if airlineItem, ok := item.(AirlineItem); ok {
-			if airlineItem.Airline.ID == model.selectedAirlineID {
-				airlineInfo = fmt.Sprintf("%s (%s)",
-					airlineItem.Airline.ICAO,
-					airlineItem.Airline.Name)
-				break
-			}
-		}
-	}
-	if airlineInfo == "" {
-		airlineInfo = fmt.Sprintf("ID: %d", model.selectedAirlineID)
-	}
-	return airlineInfo
-}
-
-func (model *Model) startPIREP() tea.Cmd {
-	return func() tea.Msg {
-		if model.selectedAircraftID <= 0 {
-			model.statusMessage = "Aircraft required"
-			return nil
-		}
-
-		level, err := strconv.Atoi(model.flightInputs[6].Value())
-		if err != nil {
-			model.statusMessage = "Invalid altitude"
-			return nil
-		}
-
-		plannedDistance, err := strconv.Atoi(model.flightInputs[5].Value())
-		if err != nil {
-			model.statusMessage = "Invalid planned distance"
-			return nil
-		}
-
-		plannedFlightTime, err := strconv.Atoi(model.flightInputs[8].Value())
-		if err != nil {
-			model.statusMessage = "Invalid planned flight time"
-			return nil
-		}
-
-		blockFuel, err := strconv.Atoi(model.flightInputs[7].Value())
-		if err != nil {
-			model.statusMessage = "Invalid block fuel"
-			return nil
-		}
-
-		data := api.PrefilePIREPRequest{
-			AirlineID:          model.selectedAirlineID,
-			AircraftID:         model.selectedAircraftID,
-			FlightType:         "J", // Scheduled Pax
-			FlightNumber:       model.flightInputs[0].Value(),
-			DepartureAirportID: model.flightInputs[1].Value(),
-			ArrivalAirportID:   model.flightInputs[2].Value(),
-			AlternateAirportID: model.flightInputs[3].Value(),
-			Route:              model.flightInputs[9].Value(),
-			Level:              level,
-			PlannedDistance:    plannedDistance,
-			PlannedFlightTime:  plannedFlightTime,
-			BlockFuel:          blockFuel,
-			Source:             1,
-			SourceName:         "vmsacars",
-			Fields: map[string]interface{}{
-				"Simulator":              "X-Plane 12",
-				"Unlimited Fuel":         "Off",
-				"Network Online":         "VATSIM",
-				"Network Callsign Check": "0",
-				"Network Callsign Used":  model.flightInputs[4].Value(),
-			},
-		}
-
-		pirepID, err := model.flightService.Prefile(model.ctx, data)
-		return prefileDataMsg{pirepID, err}
-	}
-}
-
-func (model *Model) filePIREP() tea.Cmd {
-	return func() tea.Msg {
-		snapshot := model.metrics.Snapshot()
-		lastFuel := *snapshot.LastFuel
-		if lastFuel == 0 {
-			return pirepFiledMsg{
-				fmt.Errorf("no last fuel level"),
-			}
-		}
-		startingFuel, err := strconv.Atoi(model.flightInputs[7].Value())
-		if err != nil {
-			return pirepFiledMsg{fmt.Errorf("invalid starting fuel")}
-		}
-		fuelUsed := int(math.Max(0, float64(startingFuel-lastFuel)))
-		if fuelUsed == 0 {
-			return pirepFiledMsg{fmt.Errorf("no fuel used")}
-		}
-		data := api.FilePIREPRequest{
-			FlightTime:  *snapshot.LastFlightTime,
-			FuelUsedLbs: int(math.Ceil(float64(fuelUsed) * 2.20462)),
-			Distance:    *snapshot.LastDistance,
-		}
-		err = model.flightService.FileFlight(model.ctx, data)
-		return pirepFiledMsg{err}
-	}
-}
-
-func (model *Model) cancelPIREP() tea.Cmd {
-	return func() tea.Msg {
-		return pirepCancelledMsg{model.flightService.CancelFlight(model.ctx)}
-	}
 }
