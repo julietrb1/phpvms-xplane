@@ -234,7 +234,7 @@ type landingRunway struct {
 	HeadwindComponent  string        `json:"headwind_component"`
 	CrosswindComponent string        `json:"crosswind_component"`
 	IlsFrequency       FlexibleField `json:"ils_frequency"`
-	MaxWeightDry       string        `json:"max_weight_dry"`
+	MaxWeightDry       FlexibleField `json:"max_weight_dry"`
 	MaxWeightWet       FlexibleField `json:"max_weight_wet"`
 }
 
