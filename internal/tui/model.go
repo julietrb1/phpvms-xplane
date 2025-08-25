@@ -42,7 +42,7 @@ var (
 			MarginBottom(1)
 	colourBorder     = lipgloss.Color("240")
 	colourSubtle     = lipgloss.Color("245")
-	colourAttention  = lipgloss.Color("214")
+	colourAttention  = lipgloss.Color("204")
 	colourText       = lipgloss.Color("229")
 	colourBackground = lipgloss.Color("57")
 	headingStyle     = lipgloss.NewStyle().
@@ -746,14 +746,12 @@ func (model *Model) renderFlightControls(s string) string {
 		Render("Flight controls") + "\n"
 
 	if model.activeTab == 0 {
-		airlineLabel := stylePairValue.Render("Airline")
+		s += stylePairValue.Render("Airline")
 		if model.selectedAirlineID > 0 {
 			airlineInfo := model.findSelectedAirline()
-			s += fmt.Sprintf("%s %s\n", airlineLabel,
-				styleSecondary.Render(airlineInfo))
+			s += airlineInfo + "\n"
 		} else {
-			s += fmt.Sprintf("%s %s\n", airlineLabel,
-				lipgloss.NewStyle().Foreground(colourBorder).Render("Press 'l' to select airline"))
+			s += styleSecondary.Render("Press 'l' to select airline") + "\n"
 		}
 
 		for i, input := range model.flightInputs {
@@ -795,7 +793,7 @@ func (model *Model) renderFlightControls(s string) string {
 				input.View())
 		}
 
-		aircraftLabel := stylePairValue.Render("Aircraft")
+		s += stylePairValue.Render("Aircraft")
 		if model.selectedAircraftID > 0 {
 			var aircraftInfo string
 			for _, item := range model.aircraftList.Items() {
@@ -812,11 +810,9 @@ func (model *Model) renderFlightControls(s string) string {
 			if aircraftInfo == "" {
 				aircraftInfo = fmt.Sprintf("ID: %d", model.selectedAircraftID)
 			}
-			s += fmt.Sprintf("%s %s\n", aircraftLabel,
-				styleSecondary.Render(aircraftInfo))
+			s += aircraftInfo + "\n"
 		} else {
-			s += fmt.Sprintf("%s %s\n", aircraftLabel,
-				lipgloss.NewStyle().Foreground(colourBorder).Render("Press 'a' to select aircraft"))
+			s += styleSecondary.Render("Press 'a' to select aircraft") + "\n"
 		}
 	}
 	return s
@@ -834,12 +830,19 @@ func (model *Model) renderTitle(s string) string {
 func (model *Model) renderACARSTransmissions(s string, snapshot udp.MetricsSnapshot) string {
 	s += headingStyle.
 		Render("ACARS transmissions") + "\n"
+
+	pirepID := model.flightService.GetActivePirepID()
+	s += stylePairValue.Render("Active PIREP ID:")
+	s += fmt.Sprintf("%s\n", conditionalAttentionString(pirepID))
+
 	s += stylePairValue.
 		Render("Last flight update:")
 	s += conditionalDisplay(snapshot.UpdateFlightErr) + "\n"
+
 	s += stylePairValue.
 		Render("Last position update:")
 	s += conditionalDisplay(snapshot.UpdatePositionErr) + "\n"
+
 	return s
 }
 
@@ -872,9 +875,6 @@ func (model *Model) renderFlightMetrics(s string, snapshot udp.MetricsSnapshot) 
 	s += stylePairValue.Render("Distance:")
 	s += fmt.Sprintf("%d nm\n", *snapshot.LastDistance)
 
-	pirepID := model.flightService.GetActivePirepID()
-	s += stylePairValue.Render("Active PIREP ID:")
-	s += fmt.Sprintf("%s\n", conditionalAttentionString(pirepID))
 	return s
 }
 
