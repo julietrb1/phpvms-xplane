@@ -27,11 +27,19 @@ import (
 var (
 	styleTitle = lipgloss.NewStyle().
 			Bold(true).
-			Padding(0, 0, 1, 2).
-			Foreground(colourPrimary)
+			Width(60).
+			Background(colourPrimary).
+			Align(lipgloss.Center)
 	colourPrimary  = lipgloss.Color("205")
 	styleSecondary = lipgloss.NewStyle().
 			Foreground(lipgloss.Color("170"))
+	styleSubtitle = lipgloss.NewStyle().
+			Foreground(lipgloss.Color("15")).
+			Background(lipgloss.Color("96")).
+			Padding(0, 1).
+			Width(60).
+			Align(lipgloss.Center).
+			MarginBottom(1)
 	colourBorder     = lipgloss.Color("240")
 	colourSubtle     = lipgloss.Color("245")
 	colourAttention  = lipgloss.Color("214")
@@ -39,7 +47,8 @@ var (
 	colourBackground = lipgloss.Color("57")
 	headingStyle     = lipgloss.NewStyle().
 				Bold(true).
-				Underline(true)
+				Underline(true).
+				MarginTop(1)
 	stylePairValue = lipgloss.NewStyle().Width(22).
 			Foreground(colourSubtle)
 	styleAttention = lipgloss.NewStyle().
@@ -716,32 +725,23 @@ func (model *Model) View() string {
 	snapshot := model.metrics.Snapshot()
 
 	var s string
-
-	s += styleTitle.
-		Render("PXP: the phpVMS ACARS Client") + "\n"
-
-	s += styleSecondary.
-		Render(model.statusMessage) + "\n\n"
-
-	// ACARS transmissions
-
-	s += headingStyle.
-		Render("ACARS transmissions") + "\n"
-	s += stylePairValue.
-		Render("Last flight update:")
-	s += conditionalDisplay(snapshot.UpdateFlightErr) + "\n"
-	s += stylePairValue.
-		Render("Last position update:")
-	s += conditionalDisplay(snapshot.UpdatePositionErr) + "\n\n"
-
+	s = model.renderTitle(s)
+	s = model.renderACARSTransmissions(s, snapshot)
 	s = model.renderUDPMetrics(s, snapshot)
-
-	// Flight metrics
-
 	s = model.renderFlightMetrics(s, snapshot)
+	s = model.renderFlightControls(s)
 
-	// Flight controls
+	helpView := model.help.View(model.keys)
+	if model.showHelp {
+		s += "\n" + helpView
+	} else {
+		s += "\n" + lipgloss.NewStyle().Render("Press ? for help")
+	}
 
+	return s
+}
+
+func (model *Model) renderFlightControls(s string) string {
 	s += headingStyle.
 		Render("Flight controls") + "\n"
 
@@ -819,14 +819,27 @@ func (model *Model) View() string {
 				lipgloss.NewStyle().Foreground(colourBorder).Render("Press 'a' to select aircraft"))
 		}
 	}
+	return s
+}
 
-	helpView := model.help.View(model.keys)
-	if model.showHelp {
-		s += "\n" + helpView
-	} else {
-		s += "\n" + lipgloss.NewStyle().Render("Press ? for help")
-	}
+func (model *Model) renderTitle(s string) string {
+	s += styleTitle.
+		Render("PXP: the phpVMS ACARS Client") + "\n"
 
+	s += styleSubtitle.
+		Render(model.statusMessage)
+	return s
+}
+
+func (model *Model) renderACARSTransmissions(s string, snapshot udp.MetricsSnapshot) string {
+	s += headingStyle.
+		Render("ACARS transmissions") + "\n"
+	s += stylePairValue.
+		Render("Last flight update:")
+	s += conditionalDisplay(snapshot.UpdateFlightErr) + "\n"
+	s += stylePairValue.
+		Render("Last position update:")
+	s += conditionalDisplay(snapshot.UpdatePositionErr) + "\n"
 	return s
 }
 
@@ -861,7 +874,7 @@ func (model *Model) renderFlightMetrics(s string, snapshot udp.MetricsSnapshot) 
 
 	pirepID := model.flightService.GetActivePirepID()
 	s += stylePairValue.Render("Active PIREP ID:")
-	s += fmt.Sprintf("%s\n\n", conditionalAttentionString(pirepID))
+	s += fmt.Sprintf("%s\n", conditionalAttentionString(pirepID))
 	return s
 }
 
@@ -881,7 +894,7 @@ func (model *Model) renderUDPMetrics(s string, snapshot udp.MetricsSnapshot) str
 	s += conditionalAttentionString(snapshot.LastSender) + "\n"
 
 	s += stylePairValue.Render("Last packet:")
-	s += conditionalAttentionTime(snapshot.LastPacketTime) + "\n\n"
+	s += conditionalAttentionTime(snapshot.LastPacketTime) + "\n"
 	return s
 }
 
