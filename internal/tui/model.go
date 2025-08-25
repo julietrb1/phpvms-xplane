@@ -714,7 +714,7 @@ func (model *Model) View() string {
 	var s string
 
 	s += styleTitle.
-		Render("phpVMS ACARS Client") + "\n"
+		Render("PXP: the phpVMS ACARS Client") + "\n"
 
 	s += styleSecondary.
 		Render(model.statusMessage) + "\n\n"
