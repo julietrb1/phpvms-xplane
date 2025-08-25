@@ -3,17 +3,40 @@ version: 2
 before:
   hooks:
     - go mod tidy
-#    - go generate ./...
 
 builds:
-  - main: ./cmd/phpvmsd
+  - id: darwin
+    main: ./cmd/phpvmsd
+    binary: pxp
+    env:
+      - CGO_ENABLED=0
+    goos:
+      - darwin
+    goarch:
+      - arm64
+
+  - id: windows
+    main: ./cmd/phpvmsd
+    binary: pxp
+    env:
+      - CGO_ENABLED=0
+    goos:
+      - windows
+    goarch:
+      - amd64
+      - arm64
+
+  - id: linux
+    main: ./cmd/phpvmsd
     binary: pxp
     env:
       - CGO_ENABLED=0
     goos:
       - linux
-      - windows
-      - darwin
+    goarch:
+      - amd64
+      - arm64
+      - 386
 
 archives:
   - formats: [tar.gz]
