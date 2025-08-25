@@ -24,7 +24,7 @@ type selectAirlineMsg struct {
 	id int
 }
 
-type simbriefDataMsg struct {
+type fetchSimbriefOFPMsg struct {
 	origin          string
 	destination     string
 	alternate       string
@@ -34,6 +34,10 @@ type simbriefDataMsg struct {
 	blockFuel       int
 	flightTime      int
 	route           string
+}
+
+type fetchSimbriefOFPErrorMsg struct {
+	err error
 }
 
 type prefileDataMsg struct {

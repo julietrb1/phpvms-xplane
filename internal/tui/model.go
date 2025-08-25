@@ -333,44 +333,43 @@ func (model *Model) fetchInProgressPIREP() tea.Cmd {
 
 func (model *Model) fetchSimbriefData() tea.Cmd {
 	return func() tea.Msg {
-		model.statusMessage = "Loading SimBrief OFP data..."
 		apiClient := model.flightService.GetAPIClient()
 		ofpData, err := apiClient.GetSimbriefOFP(model.ctx, model.config.SimbriefUserID)
 		if err != nil {
-			model.logger.Error("Failed to fetch SimBrief OFP data", "error", err)
-			model.statusMessage = fmt.Sprintf("Failed to fetch SimBrief OFP data: %v", err)
-			return nil
+			return fetchSimbriefOFPErrorMsg{
+				fmt.Errorf("failed to fetch SimBrief OFP: %w", err),
+			}
 		}
 
 		routeDistance, err := strconv.Atoi(ofpData.General.RouteDistance)
 		if err != nil {
-			model.logger.Error("Failed to parse route distance", "error", err)
-			model.statusMessage = fmt.Sprintf("Failed to parse route distance: %v", err)
-			return nil
+			return fetchSimbriefOFPErrorMsg{
+				fmt.Errorf("failed to parse route distance: %w", err),
+			}
 		}
 
 		initialAltitude, err := strconv.Atoi(ofpData.General.InitialAltitude)
 		if err != nil {
-			model.logger.Error("Failed to parse initial altitude", "error", err)
-			model.statusMessage = fmt.Sprintf("Failed to parse initial altitude: %v", err)
-			return nil
+			return fetchSimbriefOFPErrorMsg{
+				fmt.Errorf("failed to parse initial altitude: %w", err),
+			}
 		}
 
 		blockFuel, err := strconv.Atoi(ofpData.Fuel.PlanRamp)
 		if err != nil {
-			model.logger.Error("Failed to parse block fuel", "error", err)
-			model.statusMessage = fmt.Sprintf("Failed to parse block fuel: %v", err)
-			return nil
+			return fetchSimbriefOFPErrorMsg{
+				fmt.Errorf("failed to parse block fuel: %w", err),
+			}
 		}
 
 		flightTime, err := strconv.Atoi(ofpData.Times.EstTimeEnroute)
 		if err != nil {
-			model.logger.Error("Failed to parse flight time", "error", err)
-			model.statusMessage = fmt.Sprintf("Failed to parse flight time: %v", err)
-			return nil
+			return fetchSimbriefOFPErrorMsg{
+				fmt.Errorf("failed to parse flight time: %w", err),
+			}
 		}
 
-		return simbriefDataMsg{
+		return fetchSimbriefOFPMsg{
 			origin:          string(ofpData.Origin.ICAOCode),
 			destination:     string(ofpData.Destination.ICAOCode),
 			alternate:       string(ofpData.Alternate.ICAOCode),
@@ -598,7 +597,7 @@ func (model *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			model.statusMessage = "No airlines found"
 		}
 
-	case simbriefDataMsg:
+	case fetchSimbriefOFPMsg:
 		if msg.origin != "" && msg.destination != "" {
 			model.flightInputs[1].SetValue(msg.origin)
 			model.flightInputs[2].SetValue(msg.destination)
@@ -613,6 +612,11 @@ func (model *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			model.statusMessage = fmt.Sprintf("SimBrief OFP loaded: %s to %s", msg.origin, msg.destination)
 		} else {
 			model.statusMessage = "Failed to extract origin, destination, alternate from SimBrief OFP"
+		}
+
+	case fetchSimbriefOFPErrorMsg:
+		if msg.err != nil {
+			model.statusMessage = msg.err.Error()
 		}
 
 	case fetchInProgressPIREPMsg:
