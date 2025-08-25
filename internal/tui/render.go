@@ -120,9 +120,9 @@ func (model *Model) renderACARSTransmissions(s string, snapshot udp.MetricsSnaps
 func (model *Model) renderFlightMetrics(s string, snapshot udp.MetricsSnapshot) string {
 	s += styleHeading.Render("Flight metrics") + "\n"
 
-	if snapshot.LastStatus != nil {
-		s += fmt.Sprintf("Last status: %s\n", *snapshot.LastStatus)
-	}
+	s += stylePairKey.Render("Last status:")
+	s += conditionalAttentionString(snapshot.LastStatus) + "\n"
+
 	s += stylePairKey.Render("Fuel:")
 	s += fmt.Sprintf("%d kg\n", *snapshot.LastFuel)
 
