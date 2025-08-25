@@ -24,6 +24,26 @@ import (
 	"github.com/julietrb1/phpvms-xplane/internal/udp"
 )
 
+var (
+	styleTitle = lipgloss.NewStyle().
+			Bold(true).
+			Padding(0, 0, 1, 2).
+			Foreground(colourPrimary)
+	colourPrimary  = lipgloss.Color("205")
+	styleSecondary = lipgloss.NewStyle().
+			Foreground(lipgloss.Color("170"))
+	colourBorder     = lipgloss.Color("240")
+	colourSubtle     = lipgloss.Color("245")
+	colourHighlight  = lipgloss.Color("214")
+	colourText       = lipgloss.Color("229")
+	colourBackground = lipgloss.Color("57")
+	headingStyle     = lipgloss.NewStyle().
+				Bold(true).
+				Underline(true)
+	stylePairValue = lipgloss.NewStyle().Width(22).
+			Foreground(colourSubtle)
+)
+
 type keyMap struct {
 	Help             key.Binding
 	Quit             key.Binding
@@ -139,7 +159,7 @@ type Model struct {
 func NewModel(ctx context.Context, cancel context.CancelFunc, metrics *udp.Metrics, flightService *service.FlightService, cfg *config.Config, logger *slog.Logger) Model {
 	s := spinner.New()
 	s.Spinner = spinner.Dot
-	s.Style = lipgloss.NewStyle().Foreground(lipgloss.Color("205"))
+	s.Style = lipgloss.NewStyle().Foreground(colourPrimary)
 
 	flightInputs := make([]textinput.Model, 10)
 	for i := range flightInputs {
@@ -207,12 +227,12 @@ func NewModel(ctx context.Context, cancel context.CancelFunc, metrics *udp.Metri
 	tableStyles := table.DefaultStyles()
 	tableStyles.Header = tableStyles.Header.
 		BorderStyle(lipgloss.NormalBorder()).
-		BorderForeground(lipgloss.Color("240")).
+		BorderForeground(colourBorder).
 		BorderBottom(true).
 		Bold(false)
 	tableStyles.Selected = tableStyles.Selected.
-		Foreground(lipgloss.Color("229")).
-		Background(lipgloss.Color("57")).
+		Foreground(colourText).
+		Background(colourBackground).
 		Bold(false)
 	t.SetStyles(tableStyles)
 
@@ -221,20 +241,14 @@ func NewModel(ctx context.Context, cancel context.CancelFunc, metrics *udp.Metri
 	aircraftList.Title = "Select Aircraft"
 	aircraftList.SetShowStatusBar(false)
 	aircraftList.SetFilteringEnabled(true)
-	aircraftList.Styles.Title = lipgloss.NewStyle().
-		Foreground(lipgloss.Color("205")).
-		Bold(true).
-		Padding(0, 0, 1, 2)
+	aircraftList.Styles.Title = styleTitle
 
 	airlineDelegate := AirlineDelegate{}
 	airlineList := list.New([]list.Item{}, airlineDelegate, 0, 0)
 	airlineList.Title = "Select Airline"
 	airlineList.SetShowStatusBar(false)
 	airlineList.SetFilteringEnabled(true)
-	airlineList.Styles.Title = lipgloss.NewStyle().
-		Foreground(lipgloss.Color("205")).
-		Bold(true).
-		Padding(0, 0, 1, 2)
+	airlineList.Styles.Title = styleTitle
 
 	selectedAircraftID := 0
 	selectedAirlineID := 0
@@ -674,11 +688,10 @@ func (model *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 func conditionalDisplay(err *error) string {
 	if *err != nil {
 		return lipgloss.NewStyle().
-			Foreground(lipgloss.Color("100")).
+			Foreground(colourHighlight).
 			Render((*err).Error())
 	}
-	return lipgloss.NewStyle().
-		Foreground(lipgloss.Color("170")).
+	return styleSecondary.
 		Render("OK")
 }
 
@@ -698,79 +711,28 @@ func (model *Model) View() string {
 
 	var s string
 
-	s += lipgloss.NewStyle().
-		Bold(true).
-		Foreground(lipgloss.Color("205")).
+	s += styleTitle.
 		Render("phpVMS ACARS Client") + "\n"
 
-	s += lipgloss.NewStyle().
-		Foreground(lipgloss.Color("170")).
+	s += styleSecondary.
 		Render(model.statusMessage) + "\n\n"
-
-	headingStyle := lipgloss.NewStyle().
-		Bold(true).
-		Underline(true)
-	labelStyle := lipgloss.NewStyle().Width(22).
-		Foreground(lipgloss.Color("245"))
 
 	// ACARS transmissions
 
 	s += headingStyle.
 		Render("ACARS transmissions") + "\n"
-	s += labelStyle.
+	s += stylePairValue.
 		Render("Last flight update:")
 	s += conditionalDisplay(snapshot.UpdateFlightErr) + "\n"
-	s += labelStyle.
+	s += stylePairValue.
 		Render("Last position update:")
 	s += conditionalDisplay(snapshot.UpdatePositionErr) + "\n\n"
 
-	// UDP metrics
-
-	s += headingStyle.
-		Render("UDP metrics") + "\n"
-
-	greyStyle := lipgloss.NewStyle().
-		Foreground(lipgloss.Color("245"))
-	packets := fmt.Sprintf("Packets: %d total, %d errors",
-		snapshot.PacketsAny, snapshot.PacketsErr)
-	s += greyStyle.Render(packets) + "\n"
-
-	if snapshot.LastSender != nil {
-		lastSender := fmt.Sprintf("Last sender: %s", *snapshot.LastSender)
-		s += greyStyle.
-			Render(lastSender) + "\n"
-	}
-
-	lastPacketTimeDisplay := "nothing yet"
-	if snapshot.LastPacketTime != nil {
-		lastPacketTimeDisplay = snapshot.LastPacketTime.Format(time.RFC3339)
-	}
-	lastPacket := fmt.Sprintf("Last packet: %s", lastPacketTimeDisplay)
-	s += greyStyle.Render(lastPacket) + "\n\n"
+	s = model.renderUDPMetrics(s, snapshot)
 
 	// Flight metrics
 
-	s += headingStyle.Render("Flight metrics") + "\n"
-
-	if snapshot.LastStatus != nil {
-		s += fmt.Sprintf("Last status: %s\n", *snapshot.LastStatus)
-	}
-	if snapshot.LastFuel != nil {
-		s += fmt.Sprintf("Fuel: %d kg\n", *snapshot.LastFuel)
-	}
-	if snapshot.LastFlightTime != nil {
-		s += fmt.Sprintf("Flight time: %d minutes\n", *snapshot.LastFlightTime)
-	}
-	if snapshot.LastDistance != nil {
-		s += fmt.Sprintf("Distance: %d nm\n", *snapshot.LastDistance)
-	}
-
-	pirepID := model.flightService.GetActivePirepID()
-	if pirepID == nil {
-		pirepNoneText := "(none)"
-		pirepID = &pirepNoneText
-	}
-	s += fmt.Sprintf("Active PIREP ID: %s\n\n", *pirepID)
+	s = model.renderFlightMetrics(s, snapshot)
 
 	// Flight controls
 
@@ -778,14 +740,14 @@ func (model *Model) View() string {
 		Render("Flight controls") + "\n"
 
 	if model.activeTab == 0 {
-		airlineLabel := labelStyle.Render("Airline")
+		airlineLabel := stylePairValue.Render("Airline")
 		if model.selectedAirlineID > 0 {
 			airlineInfo := model.findSelectedAirline()
 			s += fmt.Sprintf("%s %s\n", airlineLabel,
-				lipgloss.NewStyle().Foreground(lipgloss.Color("170")).Render(airlineInfo))
+				styleSecondary.Render(airlineInfo))
 		} else {
 			s += fmt.Sprintf("%s %s\n", airlineLabel,
-				lipgloss.NewStyle().Foreground(lipgloss.Color("240")).Render("Press 'l' to select airline"))
+				lipgloss.NewStyle().Foreground(colourBorder).Render("Press 'l' to select airline"))
 		}
 
 		for i, input := range model.flightInputs {
@@ -823,11 +785,11 @@ func (model *Model) View() string {
 				}
 			}
 			s += fmt.Sprintf("%s %s\n",
-				labelStyle.Render(label),
+				stylePairValue.Render(label),
 				input.View())
 		}
 
-		aircraftLabel := labelStyle.Render("Aircraft")
+		aircraftLabel := stylePairValue.Render("Aircraft")
 		if model.selectedAircraftID > 0 {
 			var aircraftInfo string
 			for _, item := range model.aircraftList.Items() {
@@ -845,10 +807,10 @@ func (model *Model) View() string {
 				aircraftInfo = fmt.Sprintf("ID: %d", model.selectedAircraftID)
 			}
 			s += fmt.Sprintf("%s %s\n", aircraftLabel,
-				lipgloss.NewStyle().Foreground(lipgloss.Color("170")).Render(aircraftInfo))
+				styleSecondary.Render(aircraftInfo))
 		} else {
 			s += fmt.Sprintf("%s %s\n", aircraftLabel,
-				lipgloss.NewStyle().Foreground(lipgloss.Color("240")).Render("Press 'a' to select aircraft"))
+				lipgloss.NewStyle().Foreground(colourBorder).Render("Press 'a' to select aircraft"))
 		}
 	}
 
@@ -859,6 +821,53 @@ func (model *Model) View() string {
 		s += "\n" + lipgloss.NewStyle().Render("Press ? for help")
 	}
 
+	return s
+}
+
+func (model *Model) renderFlightMetrics(s string, snapshot udp.MetricsSnapshot) string {
+	s += headingStyle.Render("Flight metrics") + "\n"
+
+	if snapshot.LastStatus != nil {
+		s += fmt.Sprintf("Last status: %s\n", *snapshot.LastStatus)
+	}
+	s += stylePairValue.Render("Fuel:")
+	s += fmt.Sprintf("%d kg\n", *snapshot.LastFuel)
+	s += stylePairValue.Render("Flight time:")
+	s += fmt.Sprintf("%d minutes\n", *snapshot.LastFlightTime)
+	s += stylePairValue.Render("Distance:")
+	s += fmt.Sprintf("%d nm\n", *snapshot.LastDistance)
+
+	pirepID := model.flightService.GetActivePirepID()
+	if pirepID == nil {
+		pirepNoneText := "(none)"
+		pirepID = &pirepNoneText
+	}
+	s += stylePairValue.Render("Active PIREP ID:")
+	s += fmt.Sprintf("%s\n\n", *pirepID)
+	return s
+}
+
+func (model *Model) renderUDPMetrics(s string, snapshot udp.MetricsSnapshot) string {
+	s += headingStyle.
+		Render("UDP metrics") + "\n"
+
+	s += stylePairValue.Render("Packets:")
+	s += fmt.Sprintf("%d total, %d errors",
+		snapshot.PacketsAny, snapshot.PacketsErr) + "\n"
+
+	lastSenderDisplay := "nothing yet"
+	if snapshot.LastSender != nil {
+		lastSenderDisplay = *snapshot.LastSender
+	}
+	s += stylePairValue.Render("Last sender:")
+	s += lastSenderDisplay + "\n"
+
+	lastPacketTimeDisplay := "nothing yet"
+	if snapshot.LastPacketTime != nil {
+		lastPacketTimeDisplay = snapshot.LastPacketTime.Format(time.RFC3339)
+	}
+	s += stylePairValue.Render("Last packet:")
+	s += lastPacketTimeDisplay + "\n\n"
 	return s
 }
 
