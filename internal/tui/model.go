@@ -49,7 +49,7 @@ var (
 				Bold(true).
 				Underline(true).
 				MarginTop(1)
-	stylePairValue = lipgloss.NewStyle().Width(22).
+	stylePairKey = lipgloss.NewStyle().Width(22).
 			Foreground(colourSubtle)
 	styleAttention = lipgloss.NewStyle().
 			Foreground(colourAttention)
@@ -746,7 +746,7 @@ func (model *Model) renderFlightControls(s string) string {
 		Render("Flight controls") + "\n"
 
 	if model.activeTab == 0 {
-		s += stylePairValue.Render("Airline")
+		s += stylePairKey.Render("Airline")
 		if model.selectedAirlineID > 0 {
 			airlineInfo := model.findSelectedAirline()
 			s += airlineInfo + "\n"
@@ -789,11 +789,11 @@ func (model *Model) renderFlightControls(s string) string {
 				}
 			}
 			s += fmt.Sprintf("%s %s\n",
-				stylePairValue.Render(label),
+				stylePairKey.Render(label),
 				input.View())
 		}
 
-		s += stylePairValue.Render("Aircraft")
+		s += stylePairKey.Render("Aircraft")
 		if model.selectedAircraftID > 0 {
 			var aircraftInfo string
 			for _, item := range model.aircraftList.Items() {
@@ -832,14 +832,14 @@ func (model *Model) renderACARSTransmissions(s string, snapshot udp.MetricsSnaps
 		Render("ACARS transmissions") + "\n"
 
 	pirepID := model.flightService.GetActivePirepID()
-	s += stylePairValue.Render("Active PIREP ID:")
+	s += stylePairKey.Render("Active PIREP ID:")
 	s += fmt.Sprintf("%s\n", conditionalAttentionString(pirepID))
 
-	s += stylePairValue.
+	s += stylePairKey.
 		Render("Last flight update:")
 	s += conditionalDisplay(snapshot.UpdateFlightErr) + "\n"
 
-	s += stylePairValue.
+	s += stylePairKey.
 		Render("Last position update:")
 	s += conditionalDisplay(snapshot.UpdatePositionErr) + "\n"
 
@@ -866,13 +866,13 @@ func (model *Model) renderFlightMetrics(s string, snapshot udp.MetricsSnapshot) 
 	if snapshot.LastStatus != nil {
 		s += fmt.Sprintf("Last status: %s\n", *snapshot.LastStatus)
 	}
-	s += stylePairValue.Render("Fuel:")
+	s += stylePairKey.Render("Fuel:")
 	s += fmt.Sprintf("%d kg\n", *snapshot.LastFuel)
 
-	s += stylePairValue.Render("Flight time:")
+	s += stylePairKey.Render("Flight time:")
 	s += fmt.Sprintf("%d minutes\n", *snapshot.LastFlightTime)
 
-	s += stylePairValue.Render("Distance:")
+	s += stylePairKey.Render("Distance:")
 	s += fmt.Sprintf("%d nm\n", *snapshot.LastDistance)
 
 	return s
@@ -882,7 +882,7 @@ func (model *Model) renderUDPMetrics(s string, snapshot udp.MetricsSnapshot) str
 	s += headingStyle.
 		Render("UDP metrics") + "\n"
 
-	s += stylePairValue.Render("Packets:")
+	s += stylePairKey.Render("Packets:")
 	if snapshot.PacketsAny == 0 {
 		s += styleAttention.Render("(none)") + "\n"
 	} else {
@@ -890,10 +890,10 @@ func (model *Model) renderUDPMetrics(s string, snapshot udp.MetricsSnapshot) str
 			snapshot.PacketsAny, snapshot.PacketsErr) + "\n"
 	}
 
-	s += stylePairValue.Render("Last sender:")
+	s += stylePairKey.Render("Last sender:")
 	s += conditionalAttentionString(snapshot.LastSender) + "\n"
 
-	s += stylePairValue.Render("Last packet:")
+	s += stylePairKey.Render("Last packet:")
 	s += conditionalAttentionTime(snapshot.LastPacketTime) + "\n"
 	return s
 }
