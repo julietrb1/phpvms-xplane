@@ -176,6 +176,7 @@ func NewModel(ctx context.Context, cancel context.CancelFunc, metrics *udp.Metri
 	for i := range flightInputs {
 		t := textinput.New()
 		t.CharLimit = 32
+		t.PlaceholderStyle = styleAttention
 
 		switch i {
 		case 0:
