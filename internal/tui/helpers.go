@@ -21,7 +21,7 @@ func conditionalAttentionString(input *string) string {
 	if input == nil {
 		return styleAttention.Render("(none)")
 	}
-	return styleAttention.Render(*input)
+	return *input
 }
 
 func conditionalAttentionTime(input *time.Time) string {
