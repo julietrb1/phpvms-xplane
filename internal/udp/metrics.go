@@ -23,8 +23,8 @@ type Metrics struct {
 }
 
 func NewMetrics() *Metrics {
-	initialFlightError := fmt.Errorf("nothing yet")
-	initialPositionError := fmt.Errorf("nothing yet")
+	initialFlightError := fmt.Errorf("(none)")
+	initialPositionError := fmt.Errorf("(none)")
 	metrics := &Metrics{}
 	metrics.UpdateFlightErr.Store(&initialFlightError)
 	metrics.UpdatePositionErr.Store(&initialPositionError)

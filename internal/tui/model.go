@@ -34,7 +34,7 @@ var (
 			Foreground(lipgloss.Color("170"))
 	colourBorder     = lipgloss.Color("240")
 	colourSubtle     = lipgloss.Color("245")
-	colourHighlight  = lipgloss.Color("214")
+	colourAttention  = lipgloss.Color("214")
 	colourText       = lipgloss.Color("229")
 	colourBackground = lipgloss.Color("57")
 	headingStyle     = lipgloss.NewStyle().
@@ -42,6 +42,8 @@ var (
 				Underline(true)
 	stylePairValue = lipgloss.NewStyle().Width(22).
 			Foreground(colourSubtle)
+	styleAttention = lipgloss.NewStyle().
+			Foreground(colourAttention)
 )
 
 type keyMap struct {
@@ -688,7 +690,7 @@ func (model *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 func conditionalDisplay(err *error) string {
 	if *err != nil {
 		return lipgloss.NewStyle().
-			Foreground(colourHighlight).
+			Foreground(colourAttention).
 			Render((*err).Error())
 	}
 	return styleSecondary.
@@ -824,6 +826,20 @@ func (model *Model) View() string {
 	return s
 }
 
+func conditionalAttentionString(input *string) string {
+	if input == nil {
+		return styleAttention.Render("(none)")
+	}
+	return styleAttention.Render(*input)
+}
+
+func conditionalAttentionTime(input *time.Time) string {
+	if input == nil {
+		return styleAttention.Render("(none)")
+	}
+	return input.Format(time.RFC3339)
+}
+
 func (model *Model) renderFlightMetrics(s string, snapshot udp.MetricsSnapshot) string {
 	s += headingStyle.Render("Flight metrics") + "\n"
 
@@ -832,18 +848,16 @@ func (model *Model) renderFlightMetrics(s string, snapshot udp.MetricsSnapshot) 
 	}
 	s += stylePairValue.Render("Fuel:")
 	s += fmt.Sprintf("%d kg\n", *snapshot.LastFuel)
+
 	s += stylePairValue.Render("Flight time:")
 	s += fmt.Sprintf("%d minutes\n", *snapshot.LastFlightTime)
+
 	s += stylePairValue.Render("Distance:")
 	s += fmt.Sprintf("%d nm\n", *snapshot.LastDistance)
 
 	pirepID := model.flightService.GetActivePirepID()
-	if pirepID == nil {
-		pirepNoneText := "(none)"
-		pirepID = &pirepNoneText
-	}
 	s += stylePairValue.Render("Active PIREP ID:")
-	s += fmt.Sprintf("%s\n\n", *pirepID)
+	s += fmt.Sprintf("%s\n\n", conditionalAttentionString(pirepID))
 	return s
 }
 
@@ -852,22 +866,18 @@ func (model *Model) renderUDPMetrics(s string, snapshot udp.MetricsSnapshot) str
 		Render("UDP metrics") + "\n"
 
 	s += stylePairValue.Render("Packets:")
-	s += fmt.Sprintf("%d total, %d errors",
-		snapshot.PacketsAny, snapshot.PacketsErr) + "\n"
-
-	lastSenderDisplay := "nothing yet"
-	if snapshot.LastSender != nil {
-		lastSenderDisplay = *snapshot.LastSender
+	if snapshot.PacketsAny == 0 {
+		s += styleAttention.Render("(none)") + "\n"
+	} else {
+		s += fmt.Sprintf("%d total, %d errors",
+			snapshot.PacketsAny, snapshot.PacketsErr) + "\n"
 	}
+
 	s += stylePairValue.Render("Last sender:")
-	s += lastSenderDisplay + "\n"
+	s += conditionalAttentionString(snapshot.LastSender) + "\n"
 
-	lastPacketTimeDisplay := "nothing yet"
-	if snapshot.LastPacketTime != nil {
-		lastPacketTimeDisplay = snapshot.LastPacketTime.Format(time.RFC3339)
-	}
 	s += stylePairValue.Render("Last packet:")
-	s += lastPacketTimeDisplay + "\n\n"
+	s += conditionalAttentionTime(snapshot.LastPacketTime) + "\n\n"
 	return s
 }
 
