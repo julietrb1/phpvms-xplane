@@ -88,17 +88,23 @@ func (model *Model) renderTitle(s string) string {
 		Render("PXP: the phpVMS ACARS Client") + "\n"
 
 	s += styleSubtitle.
-		Render(model.statusMessage)
+		Render(model.statusMessage) + "\n"
+
+	s += model.renderActivePirepID()
 	return s
+}
+
+func (model *Model) renderActivePirepID() string {
+	pirepID := model.flightService.GetActivePirepID()
+	if pirepID == nil {
+		return styleInactivePirepBar.Render("(no active PIREP)")
+	}
+	return styleActivePirepBar.Render(fmt.Sprintf("Active PIREP: %s", *pirepID))
 }
 
 func (model *Model) renderACARSTransmissions(s string, snapshot udp.MetricsSnapshot) string {
 	s += styleHeading.
 		Render("ACARS transmissions") + "\n"
-
-	pirepID := model.flightService.GetActivePirepID()
-	s += stylePairKey.Render("Active PIREP ID:")
-	s += fmt.Sprintf("%s\n", conditionalAttentionString(pirepID))
 
 	s += stylePairKey.
 		Render("Last flight update:")

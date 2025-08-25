@@ -23,22 +23,23 @@ import (
 	"github.com/julietrb1/phpvms-xplane/internal/udp"
 )
 
+const nominalWidth = 60
+
 var (
 	styleTitle = lipgloss.NewStyle().
 			Bold(true).
-			Width(60).
-			Background(colourPrimary).
+			Width(nominalWidth).
+			Background(lipgloss.Color("62")).
 			Align(lipgloss.Center)
 	colourPrimary  = lipgloss.Color("205")
 	styleSecondary = lipgloss.NewStyle().
 			Foreground(lipgloss.Color("170"))
 	styleSubtitle = lipgloss.NewStyle().
 			Foreground(lipgloss.Color("15")).
-			Background(lipgloss.Color("96")).
+			Background(lipgloss.Color("61")).
 			Padding(0, 1).
-			Width(60).
-			Align(lipgloss.Center).
-			MarginBottom(1)
+			Width(nominalWidth).
+			Align(lipgloss.Center)
 	colourBorder     = lipgloss.Color("240")
 	colourSubtle     = lipgloss.Color("245")
 	colourAttention  = lipgloss.Color("204")
@@ -52,6 +53,18 @@ var (
 			Foreground(colourSubtle)
 	styleAttention = lipgloss.NewStyle().
 			Foreground(colourAttention)
+	styleInactivePirepBar = lipgloss.NewStyle().
+				Background(lipgloss.Color("242")).
+				Foreground(lipgloss.Color("15")).
+				Width(nominalWidth).
+				Align(lipgloss.Center).
+				MarginBottom(1)
+	styleActivePirepBar = lipgloss.NewStyle().
+				Background(lipgloss.Color("34")).
+				Foreground(lipgloss.Color("15")).
+				Width(nominalWidth).
+				Align(lipgloss.Center).
+				MarginBottom(1)
 )
 
 type keyMap struct {
