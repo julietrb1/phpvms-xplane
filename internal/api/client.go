@@ -105,16 +105,16 @@ func NewClient(baseURL, apiKey string, logger *slog.Logger) *Client {
 	}
 }
 
-func (c *Client) doGenericRequest(ctx context.Context, method, url string, body interface{}, result interface{}) error {
-	return c.doRequest(ctx, method, url, body, result, false)
+func (c *Client) doGenericRequest(ctx context.Context, method, url string, body interface{}, result interface{}, transformResponse func([]byte) []byte) error {
+	return c.doRequest(ctx, method, url, body, result, false, transformResponse)
 }
 
 func (c *Client) doACARSRequest(ctx context.Context, method, path string, body interface{}, result interface{}) error {
 	url := fmt.Sprintf("%s%s", c.BaseURL, path)
-	return c.doRequest(ctx, method, url, body, result, true)
+	return c.doRequest(ctx, method, url, body, result, true, nil)
 }
 
-func (c *Client) doRequest(ctx context.Context, method, url string, body interface{}, result interface{}, includeAPIKey bool) error {
+func (c *Client) doRequest(ctx context.Context, method, url string, body interface{}, result interface{}, includeAPIKey bool, transformResponse func([]byte) []byte) error {
 	var bodyReader io.Reader
 	if body != nil {
 		bodyBytes, err := json.Marshal(body)
@@ -160,6 +160,10 @@ func (c *Client) doRequest(ctx context.Context, method, url string, body interfa
 	respBody, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return fmt.Errorf("failed to read response body: %w", err)
+	}
+
+	if transformResponse != nil {
+		respBody = transformResponse(respBody)
 	}
 
 	if err := json.Unmarshal(respBody, &result); err != nil {
@@ -269,6 +273,11 @@ func (c *Client) GetAirlines(ctx context.Context) (*PaginatedResponse[models.Air
 func (c *Client) GetSimbriefOFP(ctx context.Context, simbriefUserID string) (*models.SimBriefOFP, error) {
 	var result models.SimBriefOFP
 	url := fmt.Sprintf("https://www.simbrief.com/api/xml.fetcher.php?userid=%s&json=1", simbriefUserID)
-	err := c.doGenericRequest(ctx, http.MethodGet, url, nil, &result)
+
+	transformResponse := func(data []byte) []byte {
+		return bytes.ReplaceAll(data, []byte("{}"), []byte("null"))
+	}
+
+	err := c.doGenericRequest(ctx, http.MethodGet, url, nil, &result, transformResponse)
 	return &result, err
 }

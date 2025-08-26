@@ -85,10 +85,28 @@ func (model *Model) fetchSimbriefData() tea.Cmd {
 			}
 		}
 
+		if ofpData.Origin.ICAOCode == nil {
+			return fetchSimbriefOFPErrorMsg{
+				err: fmt.Errorf("failed to parse origin ICAO code"),
+			}
+		}
+
+		if ofpData.Destination.ICAOCode == nil {
+			return fetchSimbriefOFPErrorMsg{
+				err: fmt.Errorf("failed to parse destination ICAO code"),
+			}
+		}
+
+		if ofpData.Alternate.ICAOCode == nil {
+			return fetchSimbriefOFPErrorMsg{
+				err: fmt.Errorf("failed to parse alternate ICAO code"),
+			}
+		}
+
 		return fetchSimbriefOFPMsg{
-			origin:          string(ofpData.Origin.ICAOCode),
-			destination:     string(ofpData.Destination.ICAOCode),
-			alternate:       string(ofpData.Alternate.ICAOCode),
+			origin:          *ofpData.Origin.ICAOCode,
+			destination:     *ofpData.Destination.ICAOCode,
+			alternate:       *ofpData.Alternate.ICAOCode,
 			flightNumber:    ofpData.General.FlightNumber,
 			planDist:        routeDistance,
 			initialAltitude: initialAltitude,
