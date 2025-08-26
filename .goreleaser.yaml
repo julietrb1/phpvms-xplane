@@ -6,7 +6,7 @@ before:
 
 builds:
   - id: darwin
-    main: ./cmd/phpvmsd
+    main: ./cmd/pxp
     binary: pxp
     env:
       - CGO_ENABLED=0
@@ -16,7 +16,7 @@ builds:
       - arm64
 
   - id: windows
-    main: ./cmd/phpvmsd
+    main: ./cmd/pxp
     binary: pxp
     env:
       - CGO_ENABLED=0
@@ -27,7 +27,7 @@ builds:
       - arm64
 
   - id: linux
-    main: ./cmd/phpvmsd
+    main: ./cmd/pxp
     binary: pxp
     env:
       - CGO_ENABLED=0

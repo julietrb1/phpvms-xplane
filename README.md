@@ -1,9 +1,9 @@
 # phpvms-xplane (PXP)
 
-While [phpVMS](https://www.phpvms.net) integrates directly with
-[vmsACARS](https://docs.phpvms.net/acars/overview), phpvms-xplane (PXP
+While [phpVMS](https://www.phpvms.net) plays nicely with the
+[vmsACARS client](https://docs.phpvms.net/acars/overview), `phpvms-xplane` (`PXP`
 for short) offers an alternative for those who can't (or don't wish to)
-run it, such as Windows users. It connects to X-Plane 12 via a provided
+run it, such as Linux users. It connects to X-Plane 12 via a provided
 FlyWithLua script.
 
 It's designed to be:
@@ -58,7 +58,7 @@ UDP_BIND_PORT=47777 \
 TUI_ENABLED=true \
 LOG_LEVEL=info \
 SIMBRIEF_USER_ID=123456 \
-./build/phpvmsd
+./build/pxp
 ```
 
 ### Using a .env File
@@ -78,7 +78,7 @@ SIMBRIEF_USER_ID=123456
 The application will automatically load the `.env` file if it exists. You can also specify a custom path to the `.env` file using the `-config` flag:
 
 ```
-./build/phpvmsd -config /path/to/your/.env
+./build/pxp -config /path/to/your/.env
 ```
 
 For development, you can use the `dev` target in the Makefile:

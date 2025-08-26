@@ -1,7 +1,7 @@
 .PHONY: build run test clean
 
 # Build variables
-BINARY_NAME=phpvmsd
+BINARY_NAME=pxp
 BUILD_DIR=build
 
 # Go commands
@@ -13,7 +13,7 @@ GOCLEAN=$(GO) clean
 # Build the application
 build:
 	mkdir -p $(BUILD_DIR)
-	$(GOBUILD) -o $(BUILD_DIR)/$(BINARY_NAME) ./cmd/phpvmsd
+	$(GOBUILD) -o $(BUILD_DIR)/$(BINARY_NAME) ./cmd/pxp
 
 # Run the application
 run: build
