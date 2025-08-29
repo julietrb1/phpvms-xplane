@@ -269,6 +269,18 @@ type aircraft struct {
 	IsCustom         string  `json:"is_custom"`
 }
 
+type ImpactData struct {
+	TimeEnroute    string `json:"time_enroute"`
+	TimeDifference string `json:"time_difference"`
+	EnrouteBurn    string `json:"enroute_burn"`
+	BurnDifference string `json:"burn_difference"`
+	RampFuel       string `json:"ramp_fuel"`
+	InitialFL      string `json:"initial_fl"`
+	InitialTAS     string `json:"initial_tas"`
+	InitialMach    string `json:"initial_mach"`
+	CostIndex      string `json:"cost_index"`
+}
+
 type SimBriefOFP struct {
 	Fetch       fetch            `json:"fetch"`
 	Params      params           `json:"params"`
@@ -402,73 +414,23 @@ type SimBriefOFP struct {
 		EstRamp        string `json:"est_ramp"`
 	} `json:"weights"`
 	Impacts struct {
-		Minus6000Ft struct {
-			TimeEnroute    string `json:"time_enroute"`
-			TimeDifference string `json:"time_difference"`
-			EnrouteBurn    string `json:"enroute_burn"`
-			BurnDifference string `json:"burn_difference"`
-			RampFuel       string `json:"ramp_fuel"`
-			InitialFl      string `json:"initial_fl"`
-			InitialTAS     string `json:"initial_tas"`
-			InitialMach    string `json:"initial_mach"`
-			CostIndex      string `json:"cost_index"`
-		} `json:"minus_6000ft"`
-		Minus4000Ft struct {
-			TimeEnroute    string `json:"time_enroute"`
-			TimeDifference string `json:"time_difference"`
-			EnrouteBurn    string `json:"enroute_burn"`
-			BurnDifference string `json:"burn_difference"`
-			RampFuel       string `json:"ramp_fuel"`
-			InitialFl      string `json:"initial_fl"`
-			InitialTAS     string `json:"initial_tas"`
-			InitialMach    string `json:"initial_mach"`
-			CostIndex      string `json:"cost_index"`
-		} `json:"minus_4000ft"`
-		Minus2000Ft struct {
-			TimeEnroute    string `json:"time_enroute"`
-			TimeDifference string `json:"time_difference"`
-			EnrouteBurn    string `json:"enroute_burn"`
-			BurnDifference string `json:"burn_difference"`
-			RampFuel       string `json:"ramp_fuel"`
-			InitialFl      string `json:"initial_fl"`
-			InitialTAS     string `json:"initial_tas"`
-			InitialMach    string `json:"initial_mach"`
-			CostIndex      string `json:"cost_index"`
-		} `json:"minus_2000ft"`
-		Plus2000Ft  *string `json:"plus_2000ft"`
-		Plus4000Ft  *string `json:"plus_4000ft"`
-		Plus6000Ft  *string `json:"plus_6000ft"`
-		HigherCi    *string `json:"higher_ci"`
-		LowerCi     *string `json:"lower_ci"`
-		ZfwPlus1000 struct {
-			TimeEnroute    string `json:"time_enroute"`
-			TimeDifference string `json:"time_difference"`
-			EnrouteBurn    string `json:"enroute_burn"`
-			BurnDifference string `json:"burn_difference"`
-			RampFuel       string `json:"ramp_fuel"`
-			InitialFl      string `json:"initial_fl"`
-			InitialTAS     string `json:"initial_tas"`
-			InitialMach    string `json:"initial_mach"`
-			CostIndex      string `json:"cost_index"`
-		} `json:"zfw_plus_1000"`
-		ZfwMinus1000 struct {
-			TimeEnroute    string `json:"time_enroute"`
-			TimeDifference string `json:"time_difference"`
-			EnrouteBurn    string `json:"enroute_burn"`
-			BurnDifference string `json:"burn_difference"`
-			RampFuel       string `json:"ramp_fuel"`
-			InitialFl      string `json:"initial_fl"`
-			InitialTAS     string `json:"initial_tas"`
-			InitialMach    string `json:"initial_mach"`
-			CostIndex      string `json:"cost_index"`
-		} `json:"zfw_minus_1000"`
+		Minus6000Ft  *ImpactData `json:"minus_6000ft"`
+		Minus4000Ft  *ImpactData `json:"minus_4000ft"`
+		Minus2000Ft  *ImpactData `json:"minus_2000ft"`
+		Plus2000Ft   *ImpactData `json:"plus_2000ft"`
+		Plus4000Ft   *ImpactData `json:"plus_4000ft"`
+		Plus6000Ft   *ImpactData `json:"plus_6000ft"`
+		HigherCi     *ImpactData `json:"higher_ci"`
+		LowerCi      *ImpactData `json:"lower_ci"`
+		ZfwPlus1000  *ImpactData `json:"zfw_plus_1000"`
+		ZfwMinus1000 *ImpactData `json:"zfw_minus_1000"`
 	} `json:"impacts"`
 	Crew struct {
 		PilotId string `json:"pilot_id"`
 		Cpt     string `json:"cpt"`
 		Fo      string `json:"fo"`
 		Dx      string `json:"dx"`
-		Pu      string `json:"pu"`
+		//Pu      string `json:"pu"`
 	} `json:"crew"`
 	Weather struct {
 		OrigMETAR   string  `json:"orig_metar"`
@@ -496,8 +458,8 @@ type SimBriefOFP struct {
 	Links struct {
 		Skyvector string `json:"skyvector"`
 	} `json:"links"`
-	VatsimPrefile    string `json:"vatsim_prefile"`
-	IvaoPrefile      string `json:"ivao_prefile"`
+	VATSIMPrefile    string `json:"vatsim_prefile"`
+	IVAOPrefile      string `json:"ivao_prefile"`
 	PilotedgePrefile string `json:"pilotedge_prefile"`
 	PosconPrefile    string `json:"poscon_prefile"`
 	MapData          string `json:"map_data"`
@@ -535,15 +497,15 @@ type SimBriefOFP struct {
 		AtcfuelUnits   string  `json:"atcfuel_units"`
 		Wxxfuel        string  `json:"wxxfuel"`
 		WxxfuelUnits   string  `json:"wxxfuel_units"`
-		Addedfuel      string  `json:"addedfuel"`
-		AddedfuelUnits string  `json:"addedfuel_units"`
-		AddedfuelLabel string  `json:"addedfuel_label"`
+		AddedFuel      string  `json:"addedfuel"`
+		AddedFuelUnits string  `json:"addedfuel_units"`
+		AddedFuelLabel string  `json:"addedfuel_label"`
 		Tankering      string  `json:"tankering"`
 		TankeringUnits string  `json:"tankering_units"`
-		Flightrules    string  `json:"flightrules"`
-		Flighttype     string  `json:"flighttype"`
+		FlightRules    string  `json:"flightrules"`
+		FlightType     string  `json:"flighttype"`
 		Contpct        string  `json:"contpct"`
-		Resvrule       string  `json:"resvrule"`
+		ResvRule       string  `json:"resvrule"`
 		Taxiout        string  `json:"taxiout"`
 		Taxiin         string  `json:"taxiin"`
 		Cargo          string  `json:"cargo"`
