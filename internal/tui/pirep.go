@@ -34,7 +34,7 @@ func (model *Model) startPIREP() tea.Cmd {
 			return nil
 		}
 
-		blockFuel, err := strconv.Atoi(model.flightInputs[7].Value())
+		blockFuelKg, err := strconv.Atoi(model.flightInputs[7].Value())
 		if err != nil {
 			model.statusMessage = "Invalid block fuel"
 			return nil
@@ -52,7 +52,7 @@ func (model *Model) startPIREP() tea.Cmd {
 			Level:              level,
 			PlannedDistance:    plannedDistance,
 			PlannedFlightTime:  plannedFlightTime,
-			BlockFuel:          blockFuel,
+			BlockFuel:          kgToLbs(blockFuelKg),
 			Source:             1,
 			SourceName:         "vmsacars",
 			Fields: map[string]interface{}{
@@ -82,18 +82,22 @@ func (model *Model) filePIREP() tea.Cmd {
 		if err != nil {
 			return pirepFiledMsg{error: fmt.Errorf("invalid starting fuel")}
 		}
-		fuelUsed := int(math.Max(0, float64(startingFuel-lastFuel)))
-		if fuelUsed == 0 {
+		fuelUsedKg := int(math.Max(0, float64(startingFuel-lastFuel)))
+		if fuelUsedKg == 0 {
 			return pirepFiledMsg{error: fmt.Errorf("no fuel used")}
 		}
 		data := api.FilePIREPRequest{
 			FlightTime:  *snapshot.LastFlightTime,
-			FuelUsedLbs: int(math.Ceil(float64(fuelUsed) * 2.20462)),
+			FuelUsedLbs: kgToLbs(fuelUsedKg),
 			Distance:    *snapshot.LastDistance,
 		}
 		err = model.flightService.FileFlight(model.ctx, data)
 		return pirepFiledMsg{error: err}
 	}
+}
+
+func kgToLbs(fuelUsed int) int {
+	return int(math.Ceil(float64(fuelUsed) * 2.20462))
 }
 
 func (model *Model) cancelPIREP() tea.Cmd {
