@@ -326,22 +326,22 @@ type SimBriefOFP struct {
 		} `json:"landing"`
 	} `json:"tlr"`
 	Atc struct {
-		FlightplanText string   `json:"flightplan_text"`
-		Route          string   `json:"route"`
-		RouteIfps      string   `json:"route_ifps"`
-		Callsign       string   `json:"callsign"`
-		FlightType     string   `json:"flight_type"`
-		FlightRules    string   `json:"flight_rules"`
-		InitialSpd     string   `json:"initial_spd"`
-		InitialSpdUnit string   `json:"initial_spd_unit"`
-		InitialAlt     string   `json:"initial_alt"`
-		InitialAltUnit string   `json:"initial_alt_unit"`
-		Section18      string   `json:"section18"`
-		FirOrig        string   `json:"fir_orig"`
-		FirDest        string   `json:"fir_dest"`
-		FirAltn        string   `json:"fir_altn"`
-		FirEtops       *string  `json:"fir_etops"`
-		FirEnroute     []string `json:"fir_enroute"`
+		FlightPlanText   string  `json:"flight_plan_text"`
+		Route            string  `json:"route"`
+		RouteIFPS        string  `json:"route_ifps"`
+		Callsign         string  `json:"callsign"`
+		FlightType       string  `json:"flight_type"`
+		FlightRules      string  `json:"flight_rules"`
+		InitialSpeed     string  `json:"initial_speed"`
+		InitialSpeedUnit string  `json:"initial_speed_unit"`
+		InitialAlt       string  `json:"initial_alt"`
+		InitialAltUnit   string  `json:"initial_alt_unit"`
+		Section18        string  `json:"section18"`
+		FIROrig          string  `json:"fir_orig"`
+		FIRDest          string  `json:"fir_dest"`
+		FIRAltn          string  `json:"fir_altn"`
+		FIREtops         *string `json:"fir_etops"`
+		FIREnroute       *string `json:"fir_enroute"`
 	} `json:"atc"`
 	Aircraft aircraft `json:"aircraft"`
 	Fuel     struct {
