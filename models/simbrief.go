@@ -2,6 +2,15 @@ package models
 
 import "time"
 
+type atis struct {
+	Network  string    `json:"network"`
+	Issued   time.Time `json:"issued"`
+	Letter   string    `json:"letter"`
+	Phonetic string    `json:"phonetic"`
+	Type     string    `json:"type"`
+	Message  string    `json:"message"`
+}
+
 type fetch struct {
 	Userid   string  `json:"userid"`
 	StaticId *string `json:"static_id"`
@@ -79,7 +88,7 @@ type airport struct {
 	METARCeiling    *string `json:"metar_ceiling"`
 	TAF             string  `json:"taf"`
 	TAFTime         *string `json:"taf_time"`
-	ATIS            *string `json:"atis"`
+	ATIS            *atis   `json:"atis"`
 }
 
 type alternateAirport struct {
@@ -119,7 +128,7 @@ type alternateAirport struct {
 	METARCeiling    string    `json:"metar_ceiling"`
 	TAF             string    `json:"taf"`
 	TAFTime         time.Time `json:"taf_time"`
-	ATIS            *string   `json:"atis"`
+	ATIS            *atis     `json:"atis"`
 }
 
 type navlogFix struct {
